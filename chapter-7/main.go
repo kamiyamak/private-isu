@@ -1,10 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 )
+
+var group singleflight.Group
 
 type Cache struct {
 	mu    sync.Mutex // guards
@@ -34,19 +39,38 @@ func (c *Cache) Get(key int) int {
 		return v
 	}
 
-	v = HeavyGet(key)
+	// singleflight
+	vv, err, _ := group.Do(fmt.Sprintf("cacheGet_%d", key), func() (interface{}, error) {
+		value := HeavyGet(key)
+		c.Set(key, value)
+		return value, nil
+	})
 
-	c.Set(key, v)
+	if err != nil {
+		panic(err)
+	}
 
-	return v
+	return vv.(int)
 }
 
 func HeavyGet(key int) int {
+	log.Printf("call HeavyGet %d\n", key)
 	time.Sleep(time.Second)
 	return key * 2
 }
 
 func main() {
 	mCache := NewCache()
-	log.Println(mCache.Get(12))
+
+	for i := 0; i < 100; i++ {
+		go func(i int) {
+			mCache.Get(i % 10)
+		}(i)
+	}
+
+	time.Sleep(2 * time.Second)
+
+	for i := 0; i < 10; i++ {
+		log.Println(mCache.Get(i))
+	}
 }
