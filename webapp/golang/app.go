@@ -870,5 +870,25 @@ func main() {
 		http.FileServer(http.Dir("../public")).ServeHTTP(w, r)
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	listener, err := net.Listen("unix", "/tmp/webapp.sock")
+	if err != nil {
+		log.Fatalf("Failed to listen on /tmp/webapp.sock: %s", err)
+	}
+	defer func() {
+		err := listener.Close()
+        if err != nil {
+            log.Fatalf("Failed to close listener: %s", err)
+        }
+    }()
+
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+        <-c
+		err := listener.Close()
+		if err != nil {
+			log.Fatalf("Failed to close listener: %s", err)
+		}
+    }()
+	log.Fatal(http.ListenAndServe(listener, r))
 }
