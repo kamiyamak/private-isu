@@ -5,7 +5,6 @@ services:
       - ./etc/nginx/conf.d:/etc/nginx/conf.d
       - ./public:/public
       - ./logs/nginx:/var/log/nginx
-      - socket:/tmp
     ports:
       - "80:80"
     links:
@@ -26,7 +25,6 @@ services:
       - memcached
     volumes:
       - ./public:/home/public
-      - socket:/tmp
     init: true
     deploy:
       resources:
@@ -59,4 +57,3 @@ services:
       - "11211:11211"
 volumes:
   mysql:
-  socket:
