@@ -16,7 +16,7 @@ module Isuconp
     POSTS_PER_PAGE = 20
 
 
-    IMAGE_DIR = File.expand_path('../../public/images', __FILE__)
+    IMAGE_DIR = File.expand_path('../../public/image', __FILE__)
 
     helpers do
       def config
@@ -230,7 +230,7 @@ module Isuconp
       results = db.query('
         SELECT p.id, p.user_id, p.body, p.created_at, p.mime, u.account_name
         FROM `posts` AS p JOIN `users` AS u ON (p.user_id = u.id)
-        WHERE p.del_flg = 0
+        WHERE u.del_flg = 0
         ORDER BY p.created_at DESC
         LIMIT 20
       ')
