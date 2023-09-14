@@ -111,12 +111,18 @@ module Isuconp
 
       def make_posts(results, all_comments: false)
         posts = []
+        # possts.idをあらかじめ取り出してキャッシュのキーを一覧にする
+        count_keys = results.to_a.map{|post| "comments_#{post[:id]}.count"}
+        comments_keys = results.to_a.map{|post| "comments_#{post[:id]}.#{all_comments.to_s}"}
+
+        # get_multiで複数のキーを一度に取得する
+        cached_counts = memcached.get_multi(count_keys)
+        cached_comments = memcached.get_multi(comments_keys)
+
         results.to_a.each do |post|
-          # 投稿ごとのコメント数をmemcachedからget
-          cached_comments_count = memcached.get("comments.#{post[:id]}.count")
-          if cached_comments_count
-            # キャッシュが存在したらそれを使う
-            post[:comments_count] = cached_comments_count.to_i
+          if cached_counts["comments_#{post[:id]}.count"]
+            # 取得済みキャッシュが存在したらそれを使う
+            post[:comments_count] = cached_counts["comments_#{post[:id]}.count"].to_i
           else
             # キャッシュが存在しなければSQLで取得
             post[:comments_count] = db.xquery('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` =?',
@@ -126,11 +132,9 @@ module Isuconp
             memcached.set("comments.#{post[:id]}.count", post[:comments_count], 10)
           end
 
-          # 投稿ごとのコメントをmemcachedからget
-          cached_comments = memcached.get("comments.#{post[:id]}.#{all_comments.to_s}")
-          if cached_comments
-            # キャッシュが存在したらそれを使う
-            post[:comments] = cached_comments
+          if cached_comments["comments.#{post[:id]}.#{all_comments.to_s}"]
+            # 取得済みキャッシュが存在したらそれを使う
+            post[:comments] = cached_comments["comments.#{post[:id]}.#{all_comments.to_s}"]
           else
             # 存在しなかったらクエリ JOINで1クエリで取得する
             query = 'SELECT c.`comment`, c.`created_at`, u.`account_name`
