@@ -9,6 +9,8 @@ GEM
     mustermann (3.0.0)
       ruby2_keywords (~> 0.0.1)
     mysql2 (0.5.5)
+    mysql2-cs-bind (0.1.1)
+      mysql2
     rack (2.2.8)
     rack-flash3 (1.0.5)
       rack
@@ -41,6 +43,7 @@ DEPENDENCIES
   dalli
   foreman
   mysql2
+  mysql2-cs-bind
   rack
   rack-flash3
   sinatra
