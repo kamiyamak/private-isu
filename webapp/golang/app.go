@@ -22,6 +22,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
+
+	"net"
 )
 
 var (
@@ -406,7 +408,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC")
+	err := db.Select(&results, "SELECT `p.id`, `p.user_id`, `p.body`, `p.mime`, `p.created_at` `u.account_name` FROM `posts` AS `p` JOIN `users` AS `u` ON (`p.user_id` = `u.id`) WHERE u.del_flg=0 ORDER BY `p.created_at` DESC LIMIT ?", postsPerPage)
 	if err != nil {
 		log.Print(err)
 		return
@@ -870,5 +872,11 @@ func main() {
 		http.FileServer(http.Dir("../public")).ServeHTTP(w, r)
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+    listener, err := net.Listen("unix", "/tmp/webapp.sock")
+    if err != nil {
+        panic(err)
+    }
+    defer listener.Close()
+
+    http.Serve(listener, r)
 }

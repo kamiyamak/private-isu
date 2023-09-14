@@ -12,7 +12,7 @@ services:
 
   app:
     # Go実装の場合は golang/ PHP実装の場合は php/
-    build: golang/
+    build: ruby/
     environment:
       ISUCONP_DB_HOST: mysql
       ISUCONP_DB_PORT: 3306
@@ -20,6 +20,7 @@ services:
       ISUCONP_DB_PASSWORD: root
       ISUCONP_DB_NAME: isuconp
       ISUCONP_MEMCACHED_ADDRESS: memcached:11211
+      RUBYOPT: --yjit
     links:
       - mysql
       - memcached
@@ -29,8 +30,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1g
+          cpus: '4'
+          memory: 4g
 
   mysql:
     image: mysql:8.0
@@ -48,8 +49,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1g
+          cpus: '2'
+          memory: 2g
 
   memcached:
     image: memcached:1.6
